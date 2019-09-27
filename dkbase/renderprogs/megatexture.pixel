@@ -1,0 +1,124 @@
+/*
+===========================================================================
+
+IcedTech GPL Source Code
+
+Copyright (C) 2019 Real Vector Math Studios(Justin Marshall).
+
+This file is part of the IcedTech GPL Source Code ("IcedTech GPL Source Code").  
+
+IcedTech GPL Source Code is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+IcedTech GPL Source Code is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with IcedTech GPL Source Code.  If not, see <http://www.gnu.org/licenses/>.
+
+In addition, the IcedTech GPL Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the IcedTech GPL Source Code.  If not, please request a copy in writing from id Software at the address below.
+
+If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+
+===========================================================================
+*/
+
+#include "global.inc"
+
+uniform sampler2D samp0	: register(s0);
+uniform sampler2D samp1 : register(s1);
+uniform sampler2D samp2 : register(s2);
+uniform sampler2D samp3 : register(s3);
+uniform sampler2D samp4 : register(s4);
+uniform sampler2D samp5 : register(s5);
+uniform sampler2D samp6 : register(s6);
+uniform sampler2D samp7 : register(s7);
+
+struct PS_IN {
+	float4 position : VPOS;
+	float2 texcoord0 : TEXCOORD0;
+	float2 texcoord1 : TEXCOORD1;
+	float2 texcoord2 : TEXCOORD2;
+	float2 texcoord3 : TEXCOORD3;
+	float2 texcoord4 : TEXCOORD4;
+	float2 texcoord5 : TEXCOORD5;
+	float2 texcoord6 : TEXCOORD6;
+	float4 texcoord7 : TEXCOORD7;
+};
+
+struct PS_OUT {
+	float4 color : COLOR;
+};
+
+void main( PS_IN fragment, out PS_OUT result ) {
+	float4 mask1, mask2;
+	float4 invMask1, invMask2;
+	float4 combined;
+	float2 scaled;
+	float4 R2;
+
+	mask1.x = tex2D(samp0, fragment.texcoord0.xy).x;
+	mask1.y = tex2D(samp0, fragment.texcoord1.xy).x;
+	mask1.z = tex2D(samp0, fragment.texcoord2.xy).x;
+	mask1.w = tex2D(samp0, fragment.texcoord3.xy).x;
+
+	mask2.x = tex2D(samp0, fragment.texcoord4.xy).x;
+	mask2.y = tex2D(samp0, fragment.texcoord5.xy).x;
+	mask2.z = tex2D(samp0, fragment.texcoord6.xy).x;
+	mask2.w = 1.0;
+	
+	invMask1 = 1 - mask1;
+	invMask2 = 1 - mask2;
+
+	combined = float4(0, 0, 0, 0);
+	scaled = fragment.texcoord7.zw;
+
+	// Sample the lowest quality first.
+	R2 = tex2D(samp1, scaled.xy);
+	R2.xyz = ConvertYCoCgToRGB(R2);
+	scaled = scaled * 2;
+	combined = combined * invMask1.x;
+	combined = (R2 * mask1.x) + combined;
+
+	R2 = tex2D(samp2, scaled.xy);
+	R2.xyz = ConvertYCoCgToRGB(R2);
+	scaled = scaled * 2;
+	combined = combined * invMask1.y;
+	combined = (R2 * mask1.y) + combined;
+
+	R2 = tex2D(samp3, scaled.xy);
+	R2.xyz = ConvertYCoCgToRGB(R2);
+	scaled = scaled * 2;
+	combined = combined * invMask1.z;
+	combined = (R2 * mask1.z) + combined;
+
+	R2 = tex2D(samp4, scaled.xy);
+	R2.xyz = ConvertYCoCgToRGB(R2);
+	scaled = scaled * 2;
+	combined = combined * invMask1.w;
+	combined = (R2 * mask1.w) + combined;
+
+	R2 = tex2D(samp5, scaled.xy);
+	R2.xyz = ConvertYCoCgToRGB(R2);
+	scaled = scaled * 2;
+	combined = combined * invMask2.x;
+	combined = (R2 * mask2.x) + combined;
+
+	R2 = tex2D(samp6, scaled.xy);
+	R2.xyz = ConvertYCoCgToRGB(R2);
+	scaled = scaled * 2;
+	combined = combined * invMask2.y;
+	combined = (R2 * mask2.y) + combined;
+
+	//R2 = tex2D(samp7, scaled.xy);
+	//R2.xyz = ConvertYCoCgToRGB(R2);
+	//scaled = scaled * 2;
+	//combined = combined * invMask2.z;
+	//combined = (R2 * mask2.z) + combined;
+
+	result.color = combined;
+}
